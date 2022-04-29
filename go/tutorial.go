@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	pkgURL = "tjal-2021-12.zip"
+	pkgURL = "https://dadosjusbr.org/download/datapackage/tjal/tjal-2021-12.zip"
 )
 
 func main() {

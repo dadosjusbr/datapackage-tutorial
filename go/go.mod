@@ -3,7 +3,7 @@ module datapackage-tutorial
 go 1.18
 
 require (
-	github.com/frictionlessdata/datapackage-go v1.0.2
+	github.com/frictionlessdata/datapackage-go v1.0.3
 	github.com/frictionlessdata/tableschema-go v1.1.4-0.20220401172006-6cc5f3b2411c
 	gonum.org/v1/gonum v0.11.0
 )
