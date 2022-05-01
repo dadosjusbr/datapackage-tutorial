@@ -6,7 +6,7 @@ import (
 
 	"github.com/frictionlessdata/datapackage-go/datapackage"
 	"github.com/frictionlessdata/tableschema-go/csv"
-	"gonum.org/v1/gonum/stat"
+	"gonum.org/v1/gonum/floats"
 )
 
 const (
@@ -25,5 +25,5 @@ func main() {
 		log.Fatalf("Error casting datapackage (%s):%v", pkgURL, err)
 	}
 
-	fmt.Println(stat.MeanStdDev(remunerations, nil))
+	fmt.Printf("O total de salários do TJAL em 12/2022 é %.2f\n", floats.Sum(remunerations))
 }
