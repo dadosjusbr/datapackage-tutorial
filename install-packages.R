@@ -1,2 +1,1 @@
-
-install.packages("tibble")
+curve(x^2+5)
