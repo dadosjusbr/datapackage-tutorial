@@ -5,5 +5,7 @@ RUN R -e 'remotes::install_cran("attempt")'
 RUN R -e 'remotes::install_cran("remotes")'
 RUN R -e 'remotes::install_cran("dockerfiler")'
 RUN R -e 'remotes::install_cran("devtools")'
+RUN R -e 'install.packages("languageserver")'
+RUN R -e 'install.packages("tidyverse")'
 EXPOSE 8787
 ENV "PASSWORD"="password"
