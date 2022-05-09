@@ -5,3 +5,6 @@ vscode:
   extensions:
     - Ikuyadeu.r
     - REditorSupport.r-lsp
+
+tasks:
+  - command: Rscript graph.R
