@@ -7,4 +7,4 @@ vscode:
     - REditorSupport.r-lsp
 
 tasks:
-  - command: Rscript graph.R
+  - command: Rscript packages.R
