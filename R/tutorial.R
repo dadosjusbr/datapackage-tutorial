@@ -42,6 +42,7 @@ datapackage_tjal_2021_12 %>% enframe()
 # List resources
 resources(datapackage_tjal_2021_12)
 
+# read table and create a plot
 p <- datapackage_tjal_2021_12 %>%
     read_resource("remuneracao") %>% 
     group_by(natureza, categoria) %>%
@@ -55,6 +56,7 @@ p <- datapackage_tjal_2021_12 %>%
     coord_flip() +
     scale_fill_manual(values = c("Descontos" = "#B361C6", "Recebimentos" = "#2FBB96"))
 
+# save plot
 jpeg(file = here("R/plot1.jpeg"))
 p
 dev.off()
