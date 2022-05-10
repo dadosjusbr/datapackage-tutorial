@@ -12,3 +12,4 @@ vscode:
   - eamodio.gitlens
   - ms-azuretools.vscode-docker
   - golang.go
+  - RDebugger.r-debugger
