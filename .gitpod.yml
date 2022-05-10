@@ -1,0 +1,15 @@
+image:
+  file: .gitpod.Dockerfile
+ports:
+  - port: 8787
+    onOpen: open-preview
+tasks:
+  - command: /usr/lib/rstudio-server/bin/rstudio-server start
+vscode:
+  extensions:
+  - Ikuyadeu.r
+  - DavidAnson.vscode-markdownlint
+  - eamodio.gitlens
+  - ms-azuretools.vscode-docker
+  - golang.go
+  - RDebugger.r-debugger
