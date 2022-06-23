@@ -1,2 +1,6 @@
 datapackage-tutorial
 bar.png
+*.csv
+*.zip
+*.json
+.DS_Store

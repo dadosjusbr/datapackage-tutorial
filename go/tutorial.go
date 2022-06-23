@@ -1,77 +1,89 @@
 package main
 
 import (
+	"fmt"
 	"log"
-	"math"
+	"strings"
 
 	"github.com/ahmetb/go-linq/v3"
 	"github.com/frictionlessdata/datapackage-go/datapackage"
 	"github.com/frictionlessdata/tableschema-go/csv"
-	"gonum.org/v1/plot"
-	"gonum.org/v1/plot/plotter"
-	"gonum.org/v1/plot/plotutil"
-	"gonum.org/v1/plot/vg"
 )
 
 const (
-	pkgURL = "https://dadosjusbr.org/download/datapackage/tjal/tjal-2021-12.zip"
+	pkgURL               = "https://dadosjusbr.org/download/datapackage/tjsc/tjsc-2021-11.zip"
+	paycheckResName      = "contra_cheque"
+	remunerationsResName = "remuneracao"
 )
 
 type remuneration struct {
-	Value    float64 `tableheader:"valor"`
-	Nature   string  `tableheader:"natureza"`
-	Category string  `tableheader:"categoria"`
+	PaycheckID string  `tableheader:"id_contra_cheque"`
+	Value      float64 `tableheader:"valor"`
+	Nature     string  `tableheader:"natureza"`
+	Category   string  `tableheader:"categoria"`
+}
+
+type paycheck struct {
+	ID            string `tableheader:"id_contra_cheque"`
+	Name          string `tableheader:"nome"`
+	Remunerations []remuneration
 }
 
 func main() {
+	fmt.Printf("Loading datapckage %s... ", pkgURL)
 	pkg, err := datapackage.Load(pkgURL)
 	if err != nil {
 		log.Fatalf("Error loading datapackage (%s):%v", pkgURL, err)
 	}
+	fmt.Println("Done.")
 
+	fmt.Printf("Loading paychecks table... ")
+	var paycheckTable []paycheck
+	if err = pkg.GetResource(paycheckResName).Cast(&paycheckTable, csv.LoadHeaders()); err != nil {
+		log.Fatalf("Error loading paychecks (%s):%v", pkgURL, err)
+	}
+	fmt.Printf("%d paychecks loaded.\n", len(paycheckTable))
+
+	fmt.Printf("Loading remunerations table... ")
+	var remunerationsTable []remuneration
+	if err = pkg.GetResource(remunerationsResName).Cast(&remunerationsTable, csv.LoadHeaders()); err != nil {
+		log.Fatalf("Error loading remunerations (%s):%v", pkgURL, err)
+	}
+	fmt.Printf("%d remunerations loaded.\n", len(remunerationsTable))
+
+	fmt.Printf("Taking debits out of the remunerations Table... ")
 	var remunerations []remuneration
-	err = pkg.GetResource("remuneracao").Cast(&remunerations, csv.LoadHeaders())
-	if err != nil {
-		log.Fatalf("Error casting datapackage (%s):%v", pkgURL, err)
-	}
+	linq.From(remunerationsTable).
+		WhereT(func(r remuneration) bool {
+			return r.Nature == "R"
+		}).ToSlice(&remunerations)
+	totalRem := linq.From(remunerations).
+		SelectT(func(r remuneration) float64 {
+			return r.Value
+		}).
+		SumFloats()
+	fmt.Printf("%d remunerations selected. Totalling: R$ %.2f. Average: R$ %.2f\n", len(remunerations), totalRem, totalRem/float64(len(paycheckTable)))
 
-	groups := linq.From(remunerations).WhereT(func(r remuneration) bool {
-		return r.Nature != "D" && r.Value != 0 // removing discounts and remunerations with zero values.
-	}).GroupByT(func(r remuneration) interface{} {
-		return r.Category
-	}, func(r remuneration) interface{} {
-		return r.Value
-	})
+	fmt.Printf("Joining paychecks and remunerations... ")
+	var paychecks []paycheck
+	linq.From(paycheckTable).
+		GroupJoinT(linq.From(remunerations),
+			func(p paycheck) string { return p.ID },
+			func(r remuneration) string { return r.PaycheckID },
+			func(p paycheck, r []remuneration) paycheck {
+				p.Remunerations = append(p.Remunerations, r...)
+				return p
+			}).
+		ToSlice(&paychecks)
+	fmt.Println("Done ")
 
-	xaxis := []string{}
-	values := []plotter.Values{}
-	for _, r := range groups.Results() {
-		g := r.(linq.Group)
-		xaxis = append(xaxis, g.Key.(string))
-		sum := float64(0)
-		for _, v := range g.Group {
-			sum += v.(float64)
-		}
-		values = append(values, plotter.Values{sum})
-	}
-
-	p := plot.New()
-	p.Title.Text = "Remunerações por categoria"
-	p.X.Tick.Label.Rotation = math.Pi / 2
-
-	p.NominalX(xaxis...)
-	for i, v := range values {
-		bar, err := plotter.NewBarChart(v, 15)
-		if err != nil {
-			panic(err)
-		}
-		bar.LineStyle.Width = vg.Length(0)
-		bar.Color = plotutil.Color(i)
-		bar.Offset = vg.Points(float64(i * 15))
-		p.Add(bar)
-	}
-
-	if err := p.Save(3*vg.Inch, 3*vg.Inch, "bar.png"); err != nil {
-		panic(err)
-	}
+	fmt.Printf("Searching for Joana's paycheck... ")
+	selectedPaycheck := linq.From(paychecks).FirstWithT(func(p paycheck) bool {
+		return strings.HasPrefix(p.Name, "JOANA")
+	}).(paycheck)
+	selectedRem := linq.From(selectedPaycheck.Remunerations).
+		SelectT(func(r remuneration) float64 {
+			return r.Value
+		}).SumFloats()
+	fmt.Printf("Found Joana's paycheck. ID:%s. %d remunerations found, totalling: R$ %.2f. \n", selectedPaycheck.ID, len(selectedPaycheck.Remunerations), selectedRem)
 }
